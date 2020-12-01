@@ -9,7 +9,10 @@ orbs:
     commands:
       my_command:
         steps:
-          - run: echo "Hellooo"
+          - run: 
+            command: |
+              pip install truffleHog
+            name: Install truffleHog
     jobs:
       my_job:
         executor: node/default
