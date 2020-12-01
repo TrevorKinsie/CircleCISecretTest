@@ -4,28 +4,95 @@ version: 2.1
 orbs:
   # Declare a dependency on the welcome-orb
   my_secret_scan:
-    orbs:
-      node: circleci/python@1.2.1
     commands:
       install:
         steps:
-          - run: 
-              command: pip install truffleHog
-              name: Install truffleHog
+        - run:
+            command: |
+              # Set sudo to work whether logged in as root user or non-root user
+              if [[ $EUID == 0 ]]; then export SUDO=""; else export SUDO="sudo"; fi
+              if [[ $(command -v pip) == "" ]]; then
+                echo "The truffleHog project requires pip/python to install. Please consider moving this task to a Python image."
+                exit 1
+              fi
+              $SUDO pip install truffleHog
+            name: Install truffleHog
       scan:
+        parameters:
+          disable_entropy:
+            default: false
+            description: Should we disable truffleHog's entropy detection?
+            type: boolean
+          max_history:
+            default: "1"
+            description: How far back to scan in git revisions
+            type: string
+          regexp_rules:
+            default: ""
+            description: Override default regexp rules with this file.
+            type: string
+          repo_path:
+            default: .
+            description: Scan alternate local or remote repo
+            type: string
         steps:
-          - run:
-              command: truffleHog .
-              name: Run truffleHog
+        - run:
+            command: |
+              trufflehog --max_depth=<<parameters.max_history>> --regex <<# parameters.disable_entropy >> --entropy=False <</ parameters.disable_entropy >> <<# parameters.regexp_rules >> --rules=<<parameters.regexp_rules>> <</ parameters.regexp_rules >> <<parameters.repo_path>> --json | jq '{"reason":.reason,"path": .path}'
+            name: Scan using truffleHog
+    description: "Uses popular open source tools to scan for secrets within the project.
+      \n- truffleHog: See https://github.com/dxa4481/truffleHog for more info.\n"
+    examples:
+      custom_scan:
+        description: Include custom rules
+        usage:
+          orbs:
+            secret_scan: trevorkinsie/secret_scan@volatile
+          version: 2.1
+          workflows:
+            scan:
+              jobs:
+              - secret_scan/scan:
+                  regexp_rules: path/to/rules.json
+      simple_scan:
+        description: Scan current commit for any secrets.
+        usage:
+          orbs:
+            secret_scan: trevorkinsie/secret_scan@volatile
+          version: 2.1
+          workflows:
+            scan:
+              jobs:
+              - secret_scan/scan
     jobs:
-      my_job:
-        executor: node/default # Node orb executor
+      scan:
+        docker:
+        - image: circleci/python:3
+        parameters:
+          disable_entropy:
+            default: false
+            description: Should we disable truffleHog's entropy detection?
+            type: boolean
+          max_history:
+            default: "1"
+            description: How many revisions back to scan
+            type: string
+          regexp_rules:
+            default: ""
+            description: Override default regexp rules with this file.
+            type: string
+          repo_path:
+            default: .
+            description: Scan alternate local or remote repo
+            type: string
         steps:
-          - checkout
-          - install
-          - scan
-          - store_test_results:
-              path: test-results
+        - checkout
+        - install
+        - scan:
+            disable_entropy: <<parameters.disable_entropy>>
+            max_history: <<parameters.max_history>>
+            regexp_rules: <<parameters.regexp_rules>>
+            repo_path: <<parameters.repo_path>>
         
 # Orchestrate or schedule a set of jobs
 workflows:
@@ -33,4 +100,4 @@ workflows:
   welcome:
     # Run the welcome/run job in its own container
     jobs:
-      - my_secret_scan/my_job
+      - my_secret_scan/scan
