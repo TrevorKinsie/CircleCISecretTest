@@ -12,4 +12,4 @@ workflows:
     # Run the welcome/run job in its own container
     jobs:
       - welcome/run
-      - secret_scan
+      -secret_scan/scan
