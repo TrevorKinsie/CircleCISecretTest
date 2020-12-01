@@ -10,14 +10,16 @@ orbs:
       my_command:
         steps:
           - run: 
-            command: pip install truffleHog
-            name: Install truffleHog
+              command: pip install truffleHog
+              name: Install truffleHog
     jobs:
       my_job:
-        executor: node/default
+        executor: node/default # Node orb executor
         steps:
           - checkout
           - my_command
+          - store_test_results:
+              path: test-results
         
 # Orchestrate or schedule a set of jobs
 workflows:
