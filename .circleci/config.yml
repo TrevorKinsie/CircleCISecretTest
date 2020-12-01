@@ -10,8 +10,7 @@ orbs:
       my_command:
         steps:
           - run: 
-            command: |
-              pip install truffleHog
+            command: pip install truffleHog
             name: Install truffleHog
     jobs:
       my_job:
