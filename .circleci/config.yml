@@ -22,7 +22,7 @@ orbs:
         executor: node/default # Node orb executor
         steps:
           - checkout
-          - my_command
+          - install
           - scan
           - store_test_results:
               path: test-results
