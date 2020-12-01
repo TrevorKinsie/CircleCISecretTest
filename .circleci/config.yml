@@ -7,17 +7,23 @@ orbs:
     orbs:
       node: circleci/python@1.2.1
     commands:
-      my_command:
+      install:
         steps:
           - run: 
               command: pip install truffleHog
               name: Install truffleHog
+      scan:
+        steps:
+          - run:
+              command: truffleHog .
+              name: Run truffleHog
     jobs:
       my_job:
         executor: node/default # Node orb executor
         steps:
           - checkout
           - my_command
+          - scan
           - store_test_results:
               path: test-results
         
